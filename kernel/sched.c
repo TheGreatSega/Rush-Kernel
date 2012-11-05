@@ -76,6 +76,7 @@
 #include <asm/irq_regs.h>
 
 #include "sched_cpupri.h"
+#include "sched_autogroup.h"
 
 #define CREATE_TRACE_POINTS
 #include <trace/events/sched.h>
@@ -272,6 +273,11 @@ struct task_group {
 	struct task_group *parent;
 	struct list_head siblings;
 	struct list_head children;
+
+	
+	#ifdef CONFIG_SCHED_AUTOGROUP
+		struct autogroup *autogroup;
+	#endif
 };
 
 #ifdef CONFIG_USER_SCHED
@@ -352,13 +358,22 @@ static inline struct task_group *task_group(struct task_struct *p)
 	rcu_read_lock();
 	tg = __task_cred(p)->user->tg;
 	rcu_read_unlock();
+
+	return tg;
 #elif defined(CONFIG_CGROUP_SCHED)
-	tg = container_of(task_subsys_state(p, cpu_cgroup_subsys_id),
-				struct task_group, css);
+	struct cgroup_subsys_state *css;
+
+	css = task_subsys_state(p, cpu_cgroup_subsys_id);
+
+	tg = container_of(css, struct task_group, css);
+
+	return autogroup_task_group(p, tg);
+
 #else
 	tg = &init_task_group;
-#endif
+
 	return tg;
+#endif
 }
 
 /* Change a task's cfs_rq and parent entity if it moves across CPUs/groups */
@@ -1849,6 +1864,7 @@ static inline void __set_task_cpu(struct task_struct *p, unsigned int cpu)
 #include "sched_idletask.c"
 #include "sched_fair.c"
 #include "sched_rt.c"
+#include "sched_autogroup.c"
 #ifdef CONFIG_SCHED_DEBUG
 # include "sched_debug.c"
 #endif
@@ -9599,6 +9615,7 @@ void __init sched_init(void)
 #ifdef CONFIG_GROUP_SCHED
 	list_add(&init_task_group.list, &task_groups);
 	INIT_LIST_HEAD(&init_task_group.children);
+	autogroup_init(&init_task);
 
 #ifdef CONFIG_USER_SCHED
 	INIT_LIST_HEAD(&root_task_group.children);
