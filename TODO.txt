@@ -1,0 +1,8 @@
+TODO
+
+
+Fix warnings
+FRONTSWAP
+fix tiny RCU
+add JRCU
+Update CPU Freq table

@@ -109,6 +109,10 @@ truncate_complete_page(struct address_space *mapping, struct page *page)
 	clear_page_mlock(page);
 	remove_from_page_cache(page);
 	ClearPageMappedToDisk(page);
+        /* this must be after the remove_from_page_cache which
+         * calls cleancache_put_page (and note page->mapping is now NULL)
+         */
+        cleancache_flush_page(mapping, page);
 	page_cache_release(page);	/* pagecache ref */
 	return 0;
 }
@@ -486,7 +490,6 @@ int invalidate_inode_pages2_range(struct address_space *mapping,
 		pagevec_release(&pvec);
 		cond_resched();
 	}
-
         cleancache_flush_inode(mapping);
 	return ret;
 }
