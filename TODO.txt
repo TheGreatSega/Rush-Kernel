@@ -1,8 +1,10 @@
 TODO
 
 
+FIX FM
 Fix warnings
 FRONTSWAP
 fix tiny RCU
 add JRCU
 Update CPU Freq table
+test removal of debug options
