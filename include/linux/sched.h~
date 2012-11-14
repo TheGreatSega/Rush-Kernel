@@ -552,6 +552,9 @@ struct thread_group_cputimer {
 	spinlock_t lock;
 };
 
+
+struct autogroup;
+
 /*
  * NOTE! "signal_struct" does not have it's own
  * locking, because a shared signal_struct always
@@ -617,6 +620,10 @@ struct signal_struct {
 	int leader;
 
 	struct tty_struct *tty; /* NULL if no tty */
+
+	#ifdef CONFIG_SCHED_AUTOGROUP
+		struct autogroup *autogroup;
+	#endif
 
 	/*
 	 * Cumulative resource counters for dead threads in the group,
@@ -1549,64 +1556,6 @@ struct task_struct {
 #endif /* CONFIG_TRACING */
 };
 
-#ifdef CONFIG_SCHED_BFS
-extern int grunqueue_is_locked(void);
-extern void grq_unlock_wait(void);
-#define tsk_seruntime(t)		((t)->sched_time)
-#define tsk_rttimeout(t)		((t)->rt_timeout)
-#define task_rq_unlock_wait(tsk)	grq_unlock_wait()
-
-static inline void set_oom_timeslice(struct task_struct *p)
-{
-	p->time_slice = HZ;
-}
-
-static inline void tsk_cpus_current(struct task_struct *p)
-{
-}
-
-#define runqueue_is_locked(cpu)	grunqueue_is_locked()
-
-static inline void print_scheduler_version(void)
-{
-	printk(KERN_INFO"BFS CPU scheduler v0.350 by Con Kolivas.\n");
-}
-
-static inline int iso_task(struct task_struct *p)
-{
-	return (p->policy == SCHED_ISO);
-}
-#else
-extern int runqueue_is_locked(int cpu);
-extern void task_rq_unlock_wait(struct task_struct *p);
-#define tsk_seruntime(t)	((t)->se.sum_exec_runtime)
-#define tsk_rttimeout(t)	((t)->rt.timeout)
-
-static inline void sched_exit(struct task_struct *p)
-{
-}
-
-static inline void set_oom_timeslice(struct task_struct *p)
-{
-	p->rt.time_slice = HZ;
-}
-
-static inline void tsk_cpus_current(struct task_struct *p)
-{
-	p->rt.nr_cpus_allowed = current->rt.nr_cpus_allowed;
-}
-
-static inline void print_scheduler_version(void)
-{
-	printk(KERN_INFO"CFS CPU scheduler.\n");
-}
-
-static inline int iso_task(struct task_struct *p)
-{
-	return 0;
-}
-#endif
-
 /* Future-safe accessor for struct task_struct's cpus_allowed. */
 #define tsk_cpumask(tsk) (&(tsk)->cpus_allowed)
 
@@ -2000,6 +1949,25 @@ int sched_rt_handler(struct ctl_table *table, int write,
 		loff_t *ppos);
 
 extern unsigned int sysctl_sched_compat_yield;
+
+#ifdef CONFIG_SCHED_AUTOGROUP
+extern unsigned int sysctl_sched_autogroup_enabled;
+
+extern void sched_autogroup_create_attach(struct task_struct *p);
+extern void sched_autogroup_detach(struct task_struct *p);
+extern void sched_autogroup_fork(struct signal_struct *sig);
+extern void sched_autogroup_exit(struct signal_struct *sig);
+#ifdef CONFIG_PROC_FS
+extern void proc_sched_autogroup_show_task(struct task_struct *p, struct seq_file *m);
+extern int proc_sched_autogroup_set_nice(struct task_struct *p, int *nice);
+#endif
+#else
+static inline void sched_autogroup_create_attach(struct task_struct *p) { }
+static inline void sched_autogroup_detach(struct task_struct *p) { }
+static inline void sched_autogroup_fork(struct signal_struct *sig) { }
+static inline void sched_autogroup_exit(struct signal_struct *sig) { }
+#endif
+
 
 #ifdef CONFIG_RT_MUTEXES
 extern int rt_mutex_getprio(struct task_struct *p);
