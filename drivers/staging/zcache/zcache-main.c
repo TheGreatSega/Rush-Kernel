@@ -323,8 +323,8 @@ static struct zbud_hdr *zbud_create(uint32_t pool_id, struct tmem_oid *oid,
 	if (unlikely(zbpg == NULL))
 		goto out;
 	/* ok, have a page, now compress the data before taking locks */
-	spin_lock(&zbpg->lock);
 	spin_lock(&zbud_budlists_spinlock);
+	spin_lock(&zbpg->lock);
 	list_add_tail(&zbpg->bud_list, &zbud_unbuddied[nchunks].list);
 	zbud_unbuddied[nchunks].count++;
 	zh = &zbpg->buddy[0];
@@ -353,12 +353,11 @@ init_zh:
 	zh->index = index;
 	zh->oid = *oid;
 	zh->pool_id = pool_id;
-	/* can wait to copy the data until the list locks are dropped */
-	spin_unlock(&zbud_budlists_spinlock);
-
 	to = zbud_data(zh, size);
 	memcpy(to, cdata, size);
 	spin_unlock(&zbpg->lock);
+	spin_unlock(&zbud_budlists_spinlock);
+
 	zbud_cumul_chunk_counts[nchunks]++;
 	atomic_inc(&zcache_zbud_curr_zpages);
 	zcache_zbud_cumul_zpages++;
@@ -1053,8 +1052,14 @@ static int zcache_cpu_notifier(struct notifier_block *nb,
 			kp->objnodes[kp->nr - 1] = NULL;
 			kp->nr--;
 		}
-		kmem_cache_free(zcache_obj_cache, kp->obj);
-		free_page((unsigned long)kp->page);
+		if (kp->obj) {
+			kmem_cache_free(zcache_obj_cache, kp->obj);
+			kp->obj = NULL;
+		}
+		if (kp->page) {
+			free_page((unsigned long)kp->page);
+			kp->page = NULL;
+		}
 		break;
 	default:
 		break;
@@ -1327,7 +1332,7 @@ static int zcache_new_pool(uint32_t flags)
 	int poolid = -1;
 	struct tmem_pool *pool;
 
-	pool = kmalloc(sizeof(struct tmem_pool), GFP_KERNEL);
+	pool = kmalloc(sizeof(struct tmem_pool), GFP_ATOMIC);
 	if (pool == NULL) {
 		pr_info("zcache: pool creation failed: out of memory\n");
 		goto out;
@@ -1370,6 +1375,9 @@ static void zcache_cleancache_put_page(int pool_id,
 	u32 ind = (u32) index;
 	struct tmem_oid oid = *(struct tmem_oid *)&key;
 
+        if (!PageWasActive(page))
+          return;
+
 	if (likely(ind == index))
 		(void)zcache_put_page(pool_id, &oid, index, page);
 }
@@ -1384,6 +1392,8 @@ static int zcache_cleancache_get_page(int pool_id,
 
 	if (likely(ind == index))
 		ret = zcache_get_page(pool_id, &oid, index, page);
+        if (ret == 0)
+          SetPageWasActive(page);
 	return ret;
 }
 
@@ -1455,8 +1465,10 @@ static int zcache_frontswap_poolid = -1;
 /*
  * Swizzling increases objects per swaptype, increasing tmem concurrency
  * for heavy swaploads.  Later, larger nr_cpus -> larger SWIZ_BITS
+ * Setting SWIZ_BITS to 27 basically reconstructs the swap entry from
+ * frontswap_get_page()
  */
-#define SWIZ_BITS		4
+#define SWIZ_BITS		27
 #define SWIZ_MASK		((1 << SWIZ_BITS) - 1)
 #define _oswiz(_type, _ind)	((_type << SWIZ_BITS) | (_ind & SWIZ_MASK))
 #define iswiz(_ind)		(_ind >> SWIZ_BITS)
