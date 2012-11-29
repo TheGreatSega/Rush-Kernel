@@ -421,7 +421,7 @@ static void ehci_shutdown(struct usb_hcd *hcd)
 	spin_unlock_irq(&ehci->lock);
 }
 
-static void ehci_port_power (struct ehci_hcd *ehci, int is_on)
+static void __maybe_unused ehci_port_power (struct ehci_hcd *ehci, int is_on)
 {
 	unsigned port;
 
@@ -610,7 +610,7 @@ static int ehci_init(struct usb_hcd *hcd)
 }
 
 /* start HC running; it's halted, ehci_init() has been run (once) */
-static int ehci_run (struct usb_hcd *hcd)
+static int __maybe_unused ehci_run (struct usb_hcd *hcd)
 {
 	struct ehci_hcd		*ehci = hcd_to_ehci (hcd);
 	int			retval;
@@ -1044,7 +1044,7 @@ done:
 }
 
 static void
-ehci_endpoint_reset(struct usb_hcd *hcd, struct usb_host_endpoint *ep)
+__maybe_unused ehci_endpoint_reset(struct usb_hcd *hcd, struct usb_host_endpoint *ep)
 {
 	struct ehci_hcd		*ehci = hcd_to_ehci(hcd);
 	struct ehci_qh		*qh;

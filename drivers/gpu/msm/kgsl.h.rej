@@ -1,0 +1,66 @@
+--- drivers/gpu/msm/kgsl.h
++++ drivers/gpu/msm/kgsl.h
+@@ -1,4 +1,4 @@
+-/* Copyright (c) 2008-2010, Code Aurora Forum. All rights reserved.
++/* Copyright (c) 2008-2011, Code Aurora Forum. All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions are
+@@ -112,8 +121,8 @@
+ 
+ 	struct kgsl_sharedmem shmem;
+ 
+-	/* Global list of device_private struct one per open file descriptor */
+-	struct list_head dev_priv_list;
++	/* Global lilst of open processes */
++	struct list_head process_list;
+ 	/* Global list of pagetables */
+ 	struct list_head pagetable_list;
+ 	/* Mutex for accessing the pagetable list */
+@@ -121,6 +130,24 @@
+ 
+ 	struct kgsl_pagetable *global_pt;
+ 
++	/* Size (in bytes) for each pagetable */
++	unsigned int ptsize;
++
++	/* The virtual address range for each pagetable as set by the
++	   platform */
++
++	unsigned int pt_va_size;
++
++	/* A structure for information about the pool of
++	   pagetable memory */
++
++	struct {
++		unsigned long *bitmap;
++		int entries;
++		spinlock_t lock;
++		void *hostptr;
++		unsigned int physaddr;
++	} ptpool;
+ 	struct work_struct idle_callback_work;
+ 	void (*idle_callback)(int idle);
+ };
+@@ -131,11 +158,10 @@
+ 	struct kgsl_memdesc memdesc;
+ 	struct file *file_ptr;
+ 	struct list_head list;
+-	struct list_head free_list;
+ 	uint32_t free_timestamp;
+ 	/* back pointer to private structure under whose context this
+ 	* allocation is made */
+-	struct kgsl_file_private *priv;
++	struct kgsl_process_private *priv;
+ };
+ 
+ enum kgsl_status {
+@@ -171,7 +197,7 @@
+ #define MMU_CONFIG 1
+ #endif
+ 
+-void kgsl_remove_mem_entry(struct kgsl_mem_entry *entry, bool preserve);
++void kgsl_destroy_mem_entry(struct kgsl_mem_entry *entry);
+ 
+ int kgsl_pwrctrl(unsigned int pwrflag);
+ void kgsl_timer(unsigned long data);

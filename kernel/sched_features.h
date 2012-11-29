@@ -3,14 +3,14 @@
  * considers the task to be running during that period. This gives it
  * a service deficit on wakeup, allowing it to run sooner.
  */
-SCHED_FEAT(FAIR_SLEEPERS, 1)
+SCHED_FEAT(FAIR_SLEEPERS, 0)
 
 /*
  * Only give sleepers 50% of their service deficit. This allows
  * them to run sooner, but does not allow tons of sleepers to
  * rip the spread apart.
  */
-SCHED_FEAT(GENTLE_FAIR_SLEEPERS, 1)
+SCHED_FEAT(GENTLE_FAIR_SLEEPERS, 0)
 
 /*
  * By not normalizing the sleep time, heavy tasks get an effective
@@ -96,7 +96,7 @@ SCHED_FEAT(NEXT_BUDDY, 0)
  * wake-preempt) as that likely will touch the same data, increases
  * cache locality.
  */
-SCHED_FEAT(LAST_BUDDY, 1)
+SCHED_FEAT(LAST_BUDDY, 0)
 
 /*
  * Consider buddies to be cache hot, decreases the likelyness of a
@@ -109,7 +109,7 @@ SCHED_FEAT(CACHE_HOT_BUDDY, 1)
  */
 SCHED_FEAT(ARCH_POWER, 0)
 
-SCHED_FEAT(HRTICK, 0)
+SCHED_FEAT(HRTICK, 1)
 SCHED_FEAT(DOUBLE_TICK, 0)
 SCHED_FEAT(LB_BIAS, 1)
 SCHED_FEAT(LB_SHARES_UPDATE, 1)
