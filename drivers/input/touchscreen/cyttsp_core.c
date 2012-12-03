@@ -677,7 +677,6 @@ void handle_multi_touch(struct cyttsp_track_data *t, struct cyttsp *ts)
 		input_report_abs(ts->input, ABS_MT_POSITION_Y,
 						t->cur_mt_pos[id][CY_YPOS]);
 		input_report_abs(ts->input, ABS_MT_PRESSURE, t->cur_mt_z[id]);
-
 		if (mt_sync_func)
 			mt_sync_func(ts->input);
 
