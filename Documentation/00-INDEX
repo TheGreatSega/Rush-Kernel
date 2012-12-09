@@ -21,6 +21,8 @@ Changes
 	- list of changes that break older software packages.
 CodingStyle
 	- how the boss likes the C code in the kernel to look.
+crc32.txt
+	- brief tutorial on CRC computation
 development-process/
 	- An extended tutorial on how to work with the kernel development
 	  process.

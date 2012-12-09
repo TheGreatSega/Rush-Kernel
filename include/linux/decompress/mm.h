@@ -35,7 +35,7 @@ static void *malloc(int size)
 	void *p;
 
 	if (size < 0)
-		error("Malloc error");
+		return NULL;
 	if (!malloc_ptr)
 		malloc_ptr = free_mem_ptr;
 
@@ -45,7 +45,7 @@ static void *malloc(int size)
 	malloc_ptr += size;
 
 	if (free_mem_end_ptr && malloc_ptr >= free_mem_end_ptr)
-		error("Out of memory");
+		return NULL;
 
 	malloc_count++;
 	return p;
@@ -60,8 +60,6 @@ static void free(void *where)
 
 #define large_malloc(a) malloc(a)
 #define large_free(a) free(a)
-
-#define set_error_fn(x)
 
 #define INIT
 
@@ -83,9 +81,6 @@ static void free(void *where)
 
 #define large_malloc(a) vmalloc(a)
 #define large_free(a) vfree(a)
-
-static void(*error)(char *m);
-#define set_error_fn(x) error = x;
 
 #define INIT __init
 #define STATIC

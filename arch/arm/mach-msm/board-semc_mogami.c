@@ -186,7 +186,7 @@
 #define MSM_FB_SIZE		0x500000
 #endif /* CONFIG_FB_MSM_HDMI_SII9024A_PANEL */
 #define MSM_GPU_PHYS_SIZE       SZ_4M
-#define MSM_PMEM_CAMERA_SIZE    0x2B00000
+#define MSM_PMEM_CAMERA_SIZE    0x2900000
 #define MSM_PMEM_ADSP_SIZE      0x1300000
 #define PMEM_KERNEL_EBI1_SIZE   0x600000
 
@@ -4231,6 +4231,18 @@ static uint32_t msm_sdcc_setup_power(struct device *dv, unsigned int vdd)
 	return rc;
 }
 
+static uint32_t wifi_power(struct device *dv, unsigned int vdd)
+{
+	int rc = 0;
+	rc = msm_sdcc_setup_power(dv,vdd);
+	if (vdd)
+		gpio_set_value(57, 1);
+	else
+		gpio_set_value(57, 0);
+    
+	return rc;
+}
+
 static unsigned int msm7x30_sdcc_slot_status(struct device *dev)
 {
 	return (unsigned int)
@@ -4262,7 +4274,7 @@ static struct mmc_platform_data msm7x30_sdc3_data = {
 
 static struct mmc_platform_data msm7x30_sdc4_data = {
 	.ocr_mask = MMC_VDD_27_28 | MMC_VDD_28_29,
-	.translate_vdd = msm_sdcc_setup_power,
+	.translate_vdd = wifi_power,
 	.mmc_bus_width = MMC_CAP_4_BIT_DATA,
 	.status = msm7x30_sdcc_slot_status,
 	.status_irq = PM8058_GPIO_IRQ(PMIC8058_IRQ_BASE, PMIC_GPIO_SD_DET - 1),
