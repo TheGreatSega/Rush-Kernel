@@ -56,6 +56,7 @@
 #define MAX_AXI_KHZ 192000
 #define SEMC_ACPU_MIN_UV_MV 750U
 #define SEMC_ACPU_MAX_UV_MV 1525U
+#define OVERCLOCK_CPU_LOW 1 /* set to 0 to enable 2.0 GHz */
 
 struct clock_state {
 	struct clkctl_acpu_speed	*current_speed;
@@ -99,9 +100,13 @@ static struct cpufreq_frequency_table freq_table[] = {
 	{ 16, 1612800 },
 	{ 17, 1708800 },
 	{ 18, 1804800 },
+#if OVERCLOCK_CPU_LOW
+	{ 18, CPUFREQ_TABLE_END },
+#else
 	{ 19, 1900800 },
 	{ 20, 2016000 },
 	{ 21, CPUFREQ_TABLE_END },
+#endif
 };
 
 /* Use negative numbers for sources that can't be enabled/disabled */
@@ -120,10 +125,15 @@ static struct clkctl_acpu_speed acpu_freq_tbl[] = {
 	{ 184320, PLL_3,    5, 4,  61440000,  900, VDD_RAW(900) },
 	{ 245760, PLL_3,    5, 2,  61440000,  900, VDD_RAW(900) },
 	{ 368640, PLL_3,    5, 1,  122800000, 900, VDD_RAW(900) },
+	/* AXI has MSMC1 implications. See above. */
 	{ 460800, PLL_1,    2, 0,  153600000, 950, VDD_RAW(950) },
 	{ 576000, PLL_1,    2, 0,  153600000, 1000, VDD_RAW(1000) },
 	{ 652800, PLL_1,    2, 0,  153600000, 1050, VDD_RAW(1050) },
 	{ 768000, PLL_1,    2, 0,  153600000, 1050, VDD_RAW(1050) },
+	/*
+	 * AXI has MSMC1 implications. See above.
+	 * 806.4MHz is increased to match the SoC's capabilities at runtime
+	 */
 	{ 806400, PLL_2,    3, 0,  UINT_MAX, 1100, VDD_RAW(1100) },
 	{ 921600, PLL_2,    3, 0,  UINT_MAX, 1150, VDD_RAW(1150) },
 	{ 1024000, PLL_2,   3, 0,  UINT_MAX, 1200, VDD_RAW(1200) },
@@ -135,9 +145,13 @@ static struct clkctl_acpu_speed acpu_freq_tbl[] = {
 	{ 1612800, PLL_2,   3, 0,  UINT_MAX, 1300, VDD_RAW(1300) },
 	{ 1708800, PLL_2,   3, 0,  UINT_MAX, 1350, VDD_RAW(1350) },
 	{ 1804800, PLL_2,   3, 0,  UINT_MAX, 1350, VDD_RAW(1350) },
+#if OVERCLOCK_CPU_LOW
+	{ 0 }
+#else
 	{ 1900800, PLL_2,   3, 0,  UINT_MAX, 1475, VDD_RAW(1475) },
 	{ 2016000, PLL_2,   3, 0,  UINT_MAX, 1475, VDD_RAW(1475) },
 	{ 0 }
+#endif
 };
 
 #define POWER_COLLAPSE_KHZ MAX_AXI_KHZ
